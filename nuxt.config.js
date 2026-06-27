@@ -14,12 +14,18 @@ export default defineNuxtConfig({
       appClient: process.env.APP_CLIENT,
       recaptchaSiteKey: process.env.NUXT_PUBLIC_RECAPTCHA_SITE_KEY,
     },
+    jwtSecret: process.env.JWT_SECRET,
+    jwtExpiresIn: process.env.JWT_EXPIRES_IN || "3m",
+  },
+
+  nitro: {
+    experimental: {
+      openAPI: true,
+    },
   },
 
   css: [
     "@tabler/core/dist/css/tabler.min.css",
-    // '@tabler/core/dist/css/tabler-icons.min.css',
-    // "~/assets/css/main.css",
     "~/assets/css/backend.css",
   ],
 
@@ -37,6 +43,8 @@ export default defineNuxtConfig({
       ],
     },
   },
+
+  modules: ["@scalar/nuxt"],
 
   plugins: [
     "~/plugins/jquery.client.js",

@@ -3,10 +3,8 @@
     <div class="card-header">
       <div class="ms-auto">
         <div class="input-group">
-          <input type="text" class="form-control" placeholder="Cari Data ..." />
-          <button class="btn" type="button">
-            <IconSearch stroke="{2}" />
-          </button>
+          <input type="text" v-model="search" class="form-control" placeholder="Cari..." />
+          <button class="btn" type="button"><IconSearch stroke="2" /></button>
         </div>
       </div>
     </div>
@@ -15,50 +13,38 @@
         <thead>
           <tr>
             <th width="5">No</th>
-            <th>Nama User</th>
-            <th>Modul</th>
-            <th>Aksi</th>
+            <th>User</th>
+            <th>Aktivitas</th>
+            <th>Detail</th>
+            <th>IP</th>
             <th>Timestamp</th>
           </tr>
         </thead>
-        <tbody v-for="(item, index) in logAktivitas" :key="item.id">
-          <tr>
+        <tbody>
+          <tr v-if="loading"><td colspan="6" class="text-center py-4">Memuat data...</td></tr>
+          <tr v-else-if="data.length === 0"><td colspan="6" class="text-center py-4">Tidak ada data</td></tr>
+          <tr v-for="(item, index) in data" :key="item.id">
             <td class="text-center">{{ index + 1 }}</td>
-            <td>{{ item.user }}</td>
-            <td>{{ item.modul }}</td>
-            <td>{{ item.aksi }}</td>
-            <td>{{ formatDateTimeID(item.timestamp) }}</td>
+            <td>{{ item.user_name || '-' }}</td>
+            <td>{{ item.title }}</td>
+            <td>{{ item.content }}</td>
+            <td>{{ item.ip || '-' }}</td>
+            <td>{{ formatDateTime(item.created_at) }}</td>
           </tr>
         </tbody>
       </table>
     </div>
-    <div class="card-footer d-flex align-items-center">
+    <div v-if="pagination" class="card-footer d-flex align-items-center">
+      <span>Total: {{ pagination.total }}</span>
       <ul class="pagination ms-auto m-0">
-        <li class="page-item"><a class="page-link" href="#">1</a></li>
-        <li class="page-item active"><a class="page-link" href="#">2</a></li>
-        <li class="page-item"><a class="page-link" href="#">3</a></li>
-        <li class="page-item"><a class="page-link" href="#">4</a></li>
-        <li class="page-item"><a class="page-link" href="#">5</a></li>
-        <li class="page-item">
-          <a class="page-link" href="#">
-            next
-            <!-- Download SVG icon from http://tabler-icons.io/i/chevron-right -->
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="icon"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              stroke-width="2"
-              stroke="currentColor"
-              fill="none"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-              <path d="M9 6l6 6l-6 6"></path>
-            </svg>
-          </a>
+        <li class="page-item" :class="{ disabled: page <= 1 }">
+          <a class="page-link" href="javascript:;" @click="page = Math.max(1, page - 1)">Prev</a>
+        </li>
+        <li v-for="p in pagination.totalPages" :key="p" class="page-item" :class="{ active: p === page }">
+          <a class="page-link" href="javascript:;" @click="page = p">{{ p }}</a>
+        </li>
+        <li class="page-item" :class="{ disabled: page >= pagination.totalPages }">
+          <a class="page-link" href="javascript:;" @click="page = Math.min(pagination.totalPages, page + 1)">Next</a>
         </li>
       </ul>
     </div>
@@ -66,15 +52,39 @@
 </template>
 
 <script setup>
-definePageMeta({
-  title: "Log Aktifitas",
-});
+definePageMeta({ title: "Log Aktifitas", middleware: "auth" })
+useSeoMeta({ title: "Log Aktifitas" })
+useSession()
 
-useSeoMeta({
-  title: "Log Aktifitas",
-});
+import { IconSearch } from "@tabler/icons-vue"
+const { get } = useApi()
 
-import { IconSearch } from "@tabler/icons-vue";
-import { logAktivitas } from "~/data/log-aktivitas.js";
-import { formatDateTimeID } from "~/utils/formatDate.js";
+const data = ref([])
+const loading = ref(true)
+const search = ref("")
+const page = ref(1)
+const pagination = ref(null)
+
+function formatDateTime(d) {
+  if (!d) return "-"
+  return new Date(d).toLocaleDateString("id-ID", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+}
+
+watch([search, page], fetchData)
+
+async function fetchData() {
+  loading.value = true
+  try {
+    const params = new URLSearchParams()
+    params.set("page", String(page.value))
+    params.set("limit", "15")
+    if (search.value) params.set("search", search.value)
+
+    const res = await get<any>(`/activity?${params.toString()}`)
+    data.value = res.data
+    pagination.value = res.pagination
+  } catch {} finally { loading.value = false }
+}
+
+onMounted(fetchData)
 </script>

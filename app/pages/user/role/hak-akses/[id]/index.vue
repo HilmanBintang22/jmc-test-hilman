@@ -4,17 +4,12 @@
       <div class="card-body">
         <div class="row g-3">
           <div class="col-md-4 col-lg-3">
-            <label for="" class="form-label">Nama Role</label>
-            <input type="text" class="form-control" readonly disabled />
-          </div>
-          <div class="col-md-4 col-lg-3">
-            <label for="" class="form-label">Deskripsi</label>
-            <input type="text" class="form-control" readonly disabled />
+            <label class="form-label">Nama Role</label>
+            <input :value="roleData?.nama_role" type="text" class="form-control" readonly disabled />
           </div>
         </div>
       </div>
     </div>
-
     <div class="card">
       <div class="table-responsive card-body p-0">
         <table class="table table-vcenter">
@@ -29,22 +24,18 @@
               <th>Delete</th>
             </tr>
           </thead>
-          <tbody v-for="(item, index) in hakAkses" :key="item.id">
-            <tr>
+          <tbody>
+            <tr v-if="loading"><td colspan="7" class="text-center py-4">Memuat data...</td></tr>
+            <tr v-else-if="!roleData" colspan="7" class="text-center py-4">Role tidak ditemukan</tr>
+            <tr v-for="(item, index) in roleData?.permissions || []" :key="item.id">
               <td class="text-center">{{ index + 1 }}</td>
-              <td>{{ item.modul }}</td>
+              <td>{{ item.modul_fitur }}</td>
               <td class="text-center">
-                <IconCircleCheckFilled
-                  v-if="item.canAksesMenu"
-                  class="text-green"
-                />
+                <IconCircleCheckFilled v-if="item.akses" class="text-green" />
                 <IconXboxXFilled v-else class="text-red" />
               </td>
               <td class="text-center">
-                <IconCircleCheckFilled
-                  v-if="item.canCreateMenu"
-                  class="text-green"
-                />
+                <IconCircleCheckFilled v-if="item.create" class="text-green" />
                 <IconXboxXFilled v-else class="text-red" />
               </td>
               <td>{{ item.read }}</td>
@@ -59,14 +50,21 @@
 </template>
 
 <script setup>
-definePageMeta({
-  title: "Hak Akses",
-});
+definePageMeta({ title: "Hak Akses", middleware: "auth" })
+useSeoMeta({ title: "Hak Akses" })
+useSession()
 
-useSeoMeta({
-  title: "Hak Akses",
-});
+import { IconCircleCheckFilled, IconXboxXFilled } from "@tabler/icons-vue"
+const { get } = useApi()
+const route = useRoute()
 
-import { hakAkses } from "~/data/manajemen-role.js";
-import { IconCircleCheckFilled, IconXboxXFilled } from "@tabler/icons-vue";
+const roleData = ref(null)
+const loading = ref(true)
+
+onMounted(async () => {
+  try {
+    const res = await get<any>(`/role/${route.params.id}`)
+    roleData.value = res.data
+  } catch {} finally { loading.value = false }
+})
 </script>

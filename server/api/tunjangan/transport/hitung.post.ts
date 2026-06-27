@@ -1,0 +1,79 @@
+import { defineEventHandler, readBody, createError } from "h3"
+import pool from "../../../utils/db"
+import { logActivity } from "../../../utils/activity"
+
+export default defineEventHandler(async (event) => {
+  const body = await readBody(event)
+  const auth = event.context.auth
+
+  const bulan = body.bulan || new Date().getMonth() + 1
+  const tahun = body.tahun || new Date().getFullYear()
+
+  const [settingRows] = await pool.query("SELECT * FROM tunjangan_setting ORDER BY id DESC LIMIT 1")
+  const settings = settingRows as any[]
+  if (settings.length === 0) {
+    throw createError({ statusCode: 400, message: "Setting tunjangan belum dikonfigurasi" })
+  }
+
+  const setting = settings[0]
+  const baseFare = Number(setting.base_fare)
+  const minKm = setting.min_km || 5
+  const maxKm = setting.max_km || 25
+
+  const [pegawaiRows] = await pool.query(
+    `SELECT p.id, p.nama_pegawai, p.jarak_rumah_kantor,
+            TIMESTAMPDIFF(DAY, '${tahun}-${String(bulan).padStart(2, "0")}-01', LAST_DAY('${tahun}-${String(bulan).padStart(2, "0")}-01')) + 1 as days_in_month
+     FROM pegawai p
+     WHERE p.status = 'Aktif' AND p.jarak_rumah_kantor IS NOT NULL
+       AND p.jarak_rumah_kantor >= ? AND p.jarak_rumah_kantor <= ?`,
+    [minKm, maxKm],
+  )
+
+  const pegawai = pegawaiRows as any[]
+  if (pegawai.length === 0) {
+    throw createError({ statusCode: 400, message: "Tidak ada pegawai yang memenuhi kriteria" })
+  }
+
+  const hariKerja = 22
+  const conn = await pool.getConnection()
+
+  try {
+    await conn.beginTransaction()
+
+    await conn.execute(
+      "DELETE FROM tunjangan_transport WHERE bulan = ? AND tahun = ?",
+      [bulan, tahun],
+    )
+
+    let inserted = 0
+
+    for (const p of pegawai) {
+      let km = Number(p.jarak_rumah_kantor)
+      const kmRounded = km - Math.floor(km) >= 0.5 ? Math.ceil(km) : Math.floor(km)
+
+      const nominal = baseFare * kmRounded * hariKerja
+
+      await conn.execute(
+        "INSERT INTO tunjangan_transport (id_pegawai, bulan, tahun, km, hari_kerja, nominal) VALUES (?, ?, ?, ?, ?, ?)",
+        [p.id, bulan, tahun, kmRounded, hariKerja, nominal],
+      )
+      inserted++
+    }
+
+    await conn.commit()
+
+    await logActivity(
+      event,
+      "Hitung Tunjangan",
+      `Menghitung tunjangan transport bulan ${bulan}/${tahun} untuk ${inserted} pegawai`,
+      auth?.id,
+    )
+
+    return { success: true, message: `Tunjangan berhasil dihitung untuk ${inserted} pegawai` }
+  } catch (err) {
+    await conn.rollback()
+    throw createError({ statusCode: 500, message: "Gagal menghitung tunjangan" })
+  } finally {
+    conn.release()
+  }
+})

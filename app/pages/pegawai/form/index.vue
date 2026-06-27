@@ -3,13 +3,9 @@
 </template>
 
 <script setup>
-definePageMeta({
-  title: "Tambah Pegawai",
-});
+definePageMeta({ title: "Tambah Pegawai", middleware: "auth" })
+useSeoMeta({ title: "Tambah Pegawai" })
+useSession()
 
-useSeoMeta({
-  title: "Tambah Pegawai",
-});
-
-import PegawaiForm from "~/features/DataPegawai/components/PegawaiForm.vue";
+import PegawaiForm from "~/features/DataPegawai/components/PegawaiForm.vue"
 </script>

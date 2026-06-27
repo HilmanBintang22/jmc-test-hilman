@@ -1,7 +1,8 @@
 import { defineEventHandler, getQuery, setHeader } from "h3"
 import pool from "../../utils/db"
-import * as XLSX from "xlsx"
-
+import { createRequire } from "node:module"
+const require = createRequire(import.meta.url)
+const XLSX = require("xlsx")
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   let sql = `

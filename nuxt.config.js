@@ -22,6 +22,9 @@ export default defineNuxtConfig({
     experimental: {
       openAPI: true,
     },
+    externals: {
+      external: ["xlsx"]
+    }
   },
 
   css: [
@@ -44,7 +47,7 @@ export default defineNuxtConfig({
     },
   },
 
-  modules: ["@scalar/nuxt"],
+  modules: [],
 
   plugins: [
     "~/plugins/jquery.client.js",

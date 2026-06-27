@@ -1,5 +1,9 @@
+import { defineNuxtRouteMiddleware } from "nuxt/app"
+
 export default defineNuxtRouteMiddleware(async (to) => {
   if (to.path === "/login" || to.path.startsWith("/auth")) return
+
+  if (import.meta.server) return
 
   const token = localStorage.getItem("token") || sessionStorage.getItem("token")
   if (!token) {

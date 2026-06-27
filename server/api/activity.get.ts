@@ -9,20 +9,22 @@ export default defineEventHandler(async (event) => {
   let where = "WHERE 1=1"
   const params: any[] = []
 
+  const joinQuery = "LEFT JOIN user u ON a.created_by = u.id"
+
   if (query.search) {
-    where += " AND (a.title LIKE ? OR a.content LIKE ?)"
+    where += " AND (a.title LIKE ? OR a.content LIKE ? OR u.nama LIKE ?)"
     const s = `%${query.search}%`
-    params.push(s, s)
+    params.push(s, s, s)
   }
 
-  const countRows = (await pool.query(`SELECT COUNT(*) as total FROM activities a ${where}`, params))[0] as any[]
+  const countRows = (await pool.query(`SELECT COUNT(*) as total FROM activities a ${joinQuery} ${where}`, params))[0] as any[]
   const total = countRows[0].total
 
   const [rows] = await pool.query(
     `SELECT a.id, a.title, a.content, a.ip, a.url, a.browser, a.platform, a.created_at,
             u.nama as user_name
      FROM activities a
-     LEFT JOIN user u ON a.created_by = u.id
+     ${joinQuery}
      ${where}
      ORDER BY a.created_at DESC
      LIMIT ? OFFSET ?`,

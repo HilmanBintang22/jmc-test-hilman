@@ -1,4 +1,4 @@
-import { defineEventHandler, getCookie, createError } from "h3";
+import { defineEventHandler, getCookie, getHeader, createError } from "h3";
 import jwt from "jsonwebtoken";
 import process from "node:process";
 
@@ -18,10 +18,17 @@ export default defineEventHandler((event) => {
     return;
   }
 
-  // 2. Ambil token dari cookie 'auth_session' untuk rute yang dilindungi
-  const token = getCookie(event, "auth_session");
+  // 2. Ambil token dari cookie ATAU dari header Authorization
+  let token = getCookie(event, "auth_session");
 
-  // Jika token tidak ada di cookie, langsung tolak aksesnya
+  if (!token) {
+    const authHeader = getHeader(event, "authorization");
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.substring(7);
+    }
+  }
+
+  // Jika token tidak ditemukan di manapun, tolak akses
   if (!token) {
     throw createError({
       statusCode: 401,
@@ -33,8 +40,9 @@ export default defineEventHandler((event) => {
     // 3. Verifikasi apakah token JWT tersebut valid
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "rahasia_superadmin_fwdjmc");
 
-    // 4. Simpan data user hasil decode ke dalam context event
+    // 4. Simpan data user ke context (dukung kedua nama: user dan auth)
     event.context.user = decoded;
+    event.context.auth = decoded;
     
   } catch (error) {
     throw createError({

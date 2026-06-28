@@ -1,5 +1,5 @@
 import { defineEventHandler, readBody, createError } from "h3";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import pool from "../../utils/db";
 import { signToken } from "../../utils/jwt";
 import { logActivity } from "../../utils/activity";

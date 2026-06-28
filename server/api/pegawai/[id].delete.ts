@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: "Pegawai tidak ditemukan" })
   }
 
-  await pool.execute("DELETE FROM pegawai WHERE id = ?", [id])
+  await pool.query("DELETE FROM pegawai WHERE id = ?", [id])
   await logActivity(event, "Hapus Pegawai", `Menghapus pegawai ${rows[0].nama_pegawai}`, auth?.id)
 
   return { success: true, message: "Pegawai berhasil dihapus" }

@@ -1,41 +1,46 @@
-import { defineEventHandler } from "h3"
-import pool from "../utils/db"
+import { defineEventHandler } from "h3";
+import pool from "../utils/db";
 
 export default defineEventHandler(async (event) => {
-  const auth = event.context.auth
+  const auth = event.context.auth;
   if (!auth) {
-    return { success: true, data: { role: "guest", greeting: "Selamat Datang" } }
+    return {
+      success: true,
+      data: { role: "guest", greeting: "Selamat Datang" },
+    };
   }
 
-  const totalPegawai = (await pool.query("SELECT COUNT(*) as total FROM pegawai"))[0] as any[]
+  const [rows] = (await pool.query(`
+    SELECT 
+      COUNT(*) as totalPegawai,
+      SUM(CASE WHEN jenis_kontrak = 'PKWT' THEN 1 ELSE 0 END) as kontrak,
+      SUM(CASE WHEN jenis_kontrak = 'PKWTT' THEN 1 ELSE 0 END) as tetap,
+      SUM(CASE WHEN jenis_kontrak = 'Magang' THEN 1 ELSE 0 END) as magang,
+      SUM(CASE WHEN jenis_kelamin = 'Laki-laki' THEN 1 ELSE 0 END) as pria,
+      SUM(CASE WHEN jenis_kelamin = 'Perempuan' THEN 1 ELSE 0 END) as wanita
+    FROM pegawai WHERE status = 'Aktif'
+  `)) as any[];
 
-  let kontrak = 0, tetap = 0, magang = 0
-  try {
-    const [kontrakRows] = await pool.query(
-      "SELECT jenis_kontrak, COUNT(*) as total FROM pegawai GROUP BY jenis_kontrak"
-    ) as any[]
-    for (const row of kontrakRows) {
-      if (row.jenis_kontrak === 'PKWT') kontrak = row.total
-      else if (row.jenis_kontrak === 'PKWTT') tetap = row.total
-      else if (row.jenis_kontrak === 'Magang') magang = row.total
-    }
-  } catch {
-    // kolom jenis_kontrak belum ada — fallback ke query lama
-    const [statusRows] = await pool.query(
-      "SELECT p.status, COUNT(*) as total FROM pegawai p GROUP BY p.status"
-    ) as any[]
-    for (const row of statusRows) {
-      if (row.status === 'Aktif') tetap = row.total
-    }
-  }
+  const stats = rows[0] || {
+    totalPegawai: 0,
+    kontrak: 0,
+    tetap: 0,
+    magang: 0,
+    pria: 0,
+    wanita: 0,
+  };
 
-  const perJabatan = (await pool.query(
-    "SELECT mj.nama, COUNT(*) as total FROM pegawai p LEFT JOIN master_data mj ON p.id_jabatan = mj.id GROUP BY mj.nama"
-  ))[0] as any[]
+  const perJabatan = (
+    await pool.query(
+      "SELECT mj.nama, COUNT(*) as total FROM pegawai p LEFT JOIN master_data mj ON p.id_jabatan = mj.id GROUP BY mj.nama",
+    )
+  )[0] as any[];
 
-  const pegawaiTerbaru = (await pool.query(
-    "SELECT p.id, p.nip, p.nama_pegawai as nama, p.tanggal_masuk, p.status, p.foto_pegawai as foto FROM pegawai p ORDER BY p.created_at DESC LIMIT 5"
-  ))[0] as any[]
+  const pegawaiTerbaru = (
+    await pool.query(
+      "SELECT p.id, p.nip, p.nama_pegawai as nama, p.tanggal_masuk, p.status, p.foto_pegawai as foto FROM pegawai p ORDER BY p.created_at DESC LIMIT 5",
+    )
+  )[0] as any[];
 
   return {
     success: true,
@@ -44,15 +49,15 @@ export default defineEventHandler(async (event) => {
       greeting: `Selamat Datang ${auth.nama}`,
       user: auth,
       statistik: {
-        totalPegawai: totalPegawai[0].total,
-        kontrak,
-        tetap,
-        magang,
-        pria: 0,
-        wanita: 0,
+        totalPegawai: Number(stats.totalPegawai) || 0,
+        kontrak: Number(stats.kontrak) || 0,
+        tetap: Number(stats.tetap) || 0,
+        magang: Number(stats.magang) || 0,
+        pria: Number(stats.pria) || 0,
+        wanita: Number(stats.wanita) || 0,
         perJabatan,
       },
       pegawaiTerbaru,
     },
-  }
-})
+  };
+});

@@ -24,6 +24,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // Sinkronisasikan token dari cookie ke dalam state useApi
   setToken(tokenCookie.value)
+  console.log("🔄 JWT synced from cookie:", tokenCookie.value)
 
   // 3. Validasi ulang ke server apakah token masih aktif/valid
   const authenticated = await checkAuth()

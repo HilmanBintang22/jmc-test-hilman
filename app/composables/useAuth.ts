@@ -32,6 +32,9 @@ export function useAuth() {
     const res = await post<any>("/auth/login", { username, password, recaptchaToken })
 
     setToken(res.token)
+    const payload = JSON.parse(atob(res.token.split(".")[1]))
+    console.log("✅ JWT received:", res.token)
+    console.log("📦 JWT payload:", payload)
     user.value = res.user
     permissions.value = res.permissions || []
     isLoggedIn.value = true

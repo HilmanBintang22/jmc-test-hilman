@@ -70,6 +70,8 @@ export default defineEventHandler(async (event) => {
     nama: user.nama || user.nama_pegawai,
   });
 
+  console.log("🔐 JWT created:", token)
+
   // --- SIMPAN COOKIE SESSION ---
   // httpOnly: false agar Nuxt useCookie() bisa membaca token di client-side middleware
   // Token tetap aman karena divalidasi ulang ke server di setiap request

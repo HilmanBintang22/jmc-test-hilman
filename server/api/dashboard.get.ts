@@ -8,8 +8,26 @@ export default defineEventHandler(async (event) => {
   }
 
   const totalPegawai = (await pool.query("SELECT COUNT(*) as total FROM pegawai"))[0] as any[]
-  const totalAktif = (await pool.query("SELECT COUNT(*) as total FROM pegawai WHERE status = 'Aktif'"))[0] as any[]
-  const totalNonaktif = (await pool.query("SELECT COUNT(*) as total FROM pegawai WHERE status = 'Nonaktif'"))[0] as any[]
+
+  let kontrak = 0, tetap = 0, magang = 0
+  try {
+    const [kontrakRows] = await pool.query(
+      "SELECT jenis_kontrak, COUNT(*) as total FROM pegawai GROUP BY jenis_kontrak"
+    ) as any[]
+    for (const row of kontrakRows) {
+      if (row.jenis_kontrak === 'PKWT') kontrak = row.total
+      else if (row.jenis_kontrak === 'PKWTT') tetap = row.total
+      else if (row.jenis_kontrak === 'Magang') magang = row.total
+    }
+  } catch {
+    // kolom jenis_kontrak belum ada — fallback ke query lama
+    const [statusRows] = await pool.query(
+      "SELECT p.status, COUNT(*) as total FROM pegawai p GROUP BY p.status"
+    ) as any[]
+    for (const row of statusRows) {
+      if (row.status === 'Aktif') tetap = row.total
+    }
+  }
 
   const perJabatan = (await pool.query(
     "SELECT mj.nama, COUNT(*) as total FROM pegawai p LEFT JOIN master_data mj ON p.id_jabatan = mj.id GROUP BY mj.nama"
@@ -27,11 +45,9 @@ export default defineEventHandler(async (event) => {
       user: auth,
       statistik: {
         totalPegawai: totalPegawai[0].total,
-        totalAktif: totalAktif[0].total,
-        totalNonaktif: totalNonaktif[0].total,
-        kontrak: 0,
-        tetap: 0,
-        magang: 0,
+        kontrak,
+        tetap,
+        magang,
         pria: 0,
         wanita: 0,
         perJabatan,

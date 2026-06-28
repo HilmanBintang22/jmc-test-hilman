@@ -15,6 +15,12 @@ export default defineEventHandler(async (event) => {
   if (body.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) {
     throw createError({ statusCode: 400, message: "Format email tidak valid" })
   }
+  if (body.nomor_hp && !/^\+62[0-9]{6,15}$/.test(body.nomor_hp)) {
+    throw createError({ statusCode: 400, message: "Format nomor HP harus internasional (+62xxx)" })
+  }
+  if (body.nama_pegawai && !/^[a-zA-Z0-9\' ]+$/.test(body.nama_pegawai)) {
+    throw createError({ statusCode: 400, message: "Nama hanya boleh huruf, angka, petik, dan spasi" })
+  }
 
   const conn = await pool.getConnection()
   try {
@@ -23,8 +29,8 @@ export default defineEventHandler(async (event) => {
     const [result] = await conn.execute(
       `INSERT INTO pegawai (foto_pegawai, nip, nama_pegawai, email, nomor_hp, tempat_lahir,
         id_kecamatan, alamat_lengkap, jarak_rumah_kantor, tanggal_lahir, status_kawin,
-        jumlah_anak, tanggal_masuk, id_jabatan, id_departemen, usia, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        jumlah_anak, tanggal_masuk, id_jabatan, id_departemen, usia, status, jenis_kontrak)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         body.foto_pegawai || null,
         body.nip,
@@ -43,6 +49,7 @@ export default defineEventHandler(async (event) => {
         body.id_departemen || null,
         body.usia || null,
         body.status || "Aktif",
+        body.jenis_kontrak || "PKWTT",
       ],
     )
 

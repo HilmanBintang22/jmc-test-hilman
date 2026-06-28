@@ -40,8 +40,6 @@
 <script setup>
 definePageMeta({ title: "Tunjangan Transport", middleware: "auth" })
 useSeoMeta({ title: "Tunjangan Transport" })
-useSession()
-
 import { formatRupiah } from "~/utils/formatRupiah.js"
 const { get } = useApi()
 
@@ -61,7 +59,7 @@ async function fetchData() {
   try {
     const params = new URLSearchParams()
     if (filterTahun.value) params.set("tahun", String(filterTahun.value))
-    const res = await get<any>(`/tunjangan/transport?${params.toString()}`)
+    const res = await get(`/tunjangan/transport?${params.toString()}`)
     data.value = res.data
   } catch {} finally { loading.value = false }
 }

@@ -3,23 +3,15 @@ import { defineNuxtRouteMiddleware } from "nuxt/app"
 export default defineNuxtRouteMiddleware(async (to) => {
   if (to.path === "/login" || to.path.startsWith("/auth")) return
 
-  if (import.meta.server) return
-
-  const token = localStorage.getItem("token") || sessionStorage.getItem("token")
+  const { getToken, setToken } = useApi()
+  const { checkAuth } = useAuth()
+  const token = getToken()
   if (!token) {
     return navigateTo("/login")
   }
 
-  try {
-    const res = await $fetch("/api/auth/verify", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    if (!res.success) {
-      return navigateTo("/login")
-    }
-  } catch {
-    localStorage.removeItem("token")
-    sessionStorage.removeItem("token")
+  const authenticated = await checkAuth()
+  if (!authenticated) {
     return navigateTo("/login")
   }
 })

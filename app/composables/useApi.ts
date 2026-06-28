@@ -1,10 +1,15 @@
 const BASE_URL = "/api"
+let _token: string | null = null
 
 export function useApi() {
   const config = useRuntimeConfig()
 
   function getToken(): string | null {
-    return localStorage.getItem("token") || sessionStorage.getItem("token")
+    return _token
+  }
+
+  function setToken(token: string | null) {
+    _token = token
   }
 
   async function request<T = any>(
@@ -24,10 +29,15 @@ export function useApi() {
       headers["Content-Type"] = "application/json"
     }
 
-    const res = await fetch(`${BASE_URL}${endpoint}`, {
-      ...options,
-      headers,
-    })
+    let res: Response
+    try {
+      res = await fetch(`${BASE_URL}${endpoint}`, {
+        ...options,
+        headers,
+      })
+    } catch {
+      throw new Error("Gagal terhubung ke server, periksa koneksi Anda")
+    }
 
     const contentType = res.headers.get("content-type") || ""
 
@@ -61,6 +71,7 @@ export function useApi() {
 
   return {
     getToken,
+    setToken,
     get<T = any>(endpoint: string) {
       return request<T>(endpoint, { method: "GET" })
     },

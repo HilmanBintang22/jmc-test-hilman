@@ -54,8 +54,6 @@
 <script setup>
 definePageMeta({ title: "Log Aktifitas", middleware: "auth" })
 useSeoMeta({ title: "Log Aktifitas" })
-useSession()
-
 import { IconSearch } from "@tabler/icons-vue"
 const { get } = useApi()
 
@@ -80,7 +78,7 @@ async function fetchData() {
     params.set("limit", "15")
     if (search.value) params.set("search", search.value)
 
-    const res = await get<any>(`/activity?${params.toString()}`)
+    const res = await get(`/activity?${params.toString()}`)
     data.value = res.data
     pagination.value = res.pagination
   } catch {} finally { loading.value = false }

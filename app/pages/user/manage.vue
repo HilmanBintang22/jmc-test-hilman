@@ -75,12 +75,33 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
-            <div class="mb-3">
+            <div class="mb-3" style="position: relative;">
               <label class="form-label">Nama Pegawai</label>
-              <select v-model="form.id_pegawai" class="form-select">
-                <option value="">Pilih pegawai</option>
-                <option v-for="p in pegawaiList" :key="p.id" :value="p.id">{{ p.nama }}</option>
-              </select>
+              <input
+                ref="pegawaiInput"
+                v-model="pegawaiSearch"
+                type="text"
+                class="form-control"
+                placeholder="Ketik minimal 2 karakter"
+                @input="onPegawaiSearch"
+                @blur="onPegawaiBlur"
+                @focus="onPegawaiFocus"
+              />
+              <ul
+                v-if="pegawaiSuggestions.length > 0 && pegawaiDropdownOpen"
+                class="list-group position-absolute w-100"
+                style="z-index: 1000; max-height: 200px; overflow-y: auto;"
+              >
+                <li
+                  v-for="p in pegawaiSuggestions"
+                  :key="p.id"
+                  class="list-group-item list-group-item-action"
+                  style="cursor: pointer;"
+                  @mousedown.prevent="pilihPegawai(p)"
+                >
+                  {{ p.nama }} ({{ p.nip }})
+                </li>
+              </ul>
             </div>
             <div class="mb-3">
               <label class="form-label">Username <span class="text-danger">*</span></label>
@@ -101,7 +122,11 @@
             <div class="mb-3">
               <label class="form-label">Password</label>
               <div class="input-group">
-                <input v-model="form.password" type="text" class="form-control" />
+                <input v-model="form.password" :type="showPassword ? 'text' : 'password'" class="form-control" />
+                <button type="button" class="btn btn-outline-secondary" @click="showPassword = !showPassword">
+                  <IconEye v-if="!showPassword" :stroke="1.5" size="20" />
+                  <IconEyeOff v-else :stroke="1.5" size="20" />
+                </button>
                 <button type="button" class="btn btn-primary" @click="generatePassword">Generate</button>
               </div>
             </div>
@@ -129,9 +154,7 @@
 <script setup>
 definePageMeta({ title: "Manajemen User", layout: false, middleware: "auth" })
 useSeoMeta({ title: "Manajemen User" })
-useSession()
-
-import { IconPencil, IconPlus, IconSearch, IconTrash } from "@tabler/icons-vue"
+import { IconPencil, IconPlus, IconSearch, IconTrash, IconEye, IconEyeOff } from "@tabler/icons-vue"
 const { get, post, put, del } = useApi()
 
 const data = ref([])
@@ -146,6 +169,13 @@ const pagination = ref(null)
 const editing = ref(false)
 const editId = ref(null)
 
+const pegawaiInput = ref(null)
+const pegawaiSearch = ref("")
+const pegawaiSuggestions = ref([])
+const pegawaiDropdownOpen = ref(false)
+const showPassword = ref(false)
+let pegawaiDebounce = null
+
 const form = reactive({
   username: "",
   nama: "",
@@ -155,6 +185,43 @@ const form = reactive({
   disabled: false,
 })
 
+async function onPegawaiSearch() {
+  if (pegawaiDebounce) clearTimeout(pegawaiDebounce)
+  const val = pegawaiSearch.value.trim()
+  if (val.length < 2) {
+    pegawaiSuggestions.value = []
+    pegawaiDropdownOpen.value = false
+    return
+  }
+  pegawaiDebounce = setTimeout(async () => {
+    try {
+      const res = await get(`/pegawai?search=${encodeURIComponent(val)}&limit=10`)
+      pegawaiSuggestions.value = res.data || []
+      pegawaiDropdownOpen.value = pegawaiSuggestions.value.length > 0
+    } catch {
+      pegawaiSuggestions.value = []
+    }
+  }, 300)
+}
+
+function onPegawaiFocus() {
+  if (pegawaiSuggestions.value.length > 0) {
+    pegawaiDropdownOpen.value = true
+  }
+}
+
+function onPegawaiBlur() {
+  setTimeout(() => { pegawaiDropdownOpen.value = false }, 200)
+}
+
+function pilihPegawai(p) {
+  pegawaiSearch.value = p.nama
+  form.id_pegawai = p.id
+  form.nama = p.nama || ""
+  pegawaiSuggestions.value = []
+  pegawaiDropdownOpen.value = false
+}
+
 function resetForm() {
   form.username = ""
   form.nama = ""
@@ -162,6 +229,7 @@ function resetForm() {
   form.id_pegawai = ""
   form.id_role = ""
   form.disabled = false
+  pegawaiSearch.value = ""
   editing.value = false
   editId.value = null
 }
@@ -171,9 +239,18 @@ function validasiUsername() {
 }
 
 function generatePassword() {
-  const chars = "abcdefghijklmnopqrstuvwxyz0123456789"
+  const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  const lower = "abcdefghijklmnopqrstuvwxyz"
+  const digits = "0123456789"
+  const special = "!@#$%&*"
+  const all = upper + lower + digits + special
   let pwd = ""
-  for (let i = 0; i < 10; i++) pwd += chars.charAt(Math.floor(Math.random() * chars.length))
+  pwd += upper.charAt(Math.floor(Math.random() * upper.length))
+  pwd += lower.charAt(Math.floor(Math.random() * lower.length))
+  pwd += digits.charAt(Math.floor(Math.random() * digits.length))
+  pwd += special.charAt(Math.floor(Math.random() * special.length))
+  for (let i = 0; i < 6; i++) pwd += all.charAt(Math.floor(Math.random() * all.length))
+  pwd = pwd.split("").sort(() => Math.random() - 0.5).join("")
   form.password = pwd
 }
 
@@ -186,7 +263,7 @@ async function fetchData() {
     if (search.value) params.set("search", search.value)
     if (filterRole.value) params.set("id_role", filterRole.value)
 
-    const res = await get<any>(`/user?${params.toString()}`)
+    const res = await get(`/user?${params.toString()}`)
     data.value = res.data
     pagination.value = res.pagination
   } catch {} finally { loading.value = false }
@@ -203,6 +280,7 @@ function openEdit(item) {
   form.nama = item.nama || ""
   form.password = ""
   form.id_pegawai = item.id_pegawai || ""
+  pegawaiSearch.value = item.nama_pegawai || item.nama || ""
   form.id_role = item.id_role || ""
   form.disabled = !item.isActive
 }
@@ -247,12 +325,8 @@ watch([search, filterRole, page], fetchData)
 
 onMounted(async () => {
   try {
-    const [roleRes, pegawaiRes] = await Promise.all([
-      get<any>("/role"),
-      get<any>("/pegawai?limit=100"),
-    ])
+    const roleRes = await get("/role")
     roleList.value = roleRes.data
-    pegawaiList.value = pegawaiRes.data || []
   } catch {}
   await fetchData()
 })

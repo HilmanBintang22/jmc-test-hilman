@@ -52,8 +52,6 @@
 <script setup>
 definePageMeta({ title: "Hak Akses", middleware: "auth" })
 useSeoMeta({ title: "Hak Akses" })
-useSession()
-
 import { IconCircleCheckFilled, IconXboxXFilled } from "@tabler/icons-vue"
 const { get } = useApi()
 const route = useRoute()
@@ -63,7 +61,7 @@ const loading = ref(true)
 
 onMounted(async () => {
   try {
-    const res = await get<any>(`/role/${route.params.id}`)
+    const res = await get(`/role/${route.params.id}`)
     roleData.value = res.data
   } catch {} finally { loading.value = false }
 })

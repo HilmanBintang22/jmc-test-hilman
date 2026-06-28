@@ -78,12 +78,33 @@
                 <label class="form-label">Alamat Lengkap</label>
                 <textarea v-model="form.alamat_lengkap" class="form-control" rows="3"></textarea>
               </div>
-              <div class="col-md-4">
+              <div class="col-md-4" style="position: relative;">
                 <label class="form-label">Kecamatan</label>
-                <select v-model="form.id_kecamatan" class="form-select" @change="onKecamatanChange">
-                  <option value="">Pilih kecamatan</option>
-                  <option v-for="w in wilayahList" :key="w.id" :value="w.id">{{ w.kecamatan }}</option>
-                </select>
+                <input
+                  ref="kecamatanInput"
+                  v-model="kecamatanSearch"
+                  type="text"
+                  class="form-control"
+                  placeholder="Ketik minimal 3 karakter"
+                  @input="onKecamatanSearch"
+                  @blur="onKecamatanBlur"
+                  @focus="onKecamatanFocus"
+                />
+                <ul
+                  v-if="kecamatanSuggestions.length > 0 && kecamatanDropdownOpen"
+                  class="list-group position-absolute w-100"
+                  style="z-index: 1000; max-height: 200px; overflow-y: auto;"
+                >
+                  <li
+                    v-for="w in kecamatanSuggestions"
+                    :key="w.id"
+                    class="list-group-item list-group-item-action"
+                    style="cursor: pointer;"
+                    @mousedown.prevent="pilihKecamatan(w)"
+                  >
+                    {{ w.kecamatan }} - {{ w.kabupaten }}, {{ w.provinsi }}
+                  </li>
+                </ul>
               </div>
               <div class="col-md-4">
                 <label class="form-label">Kabupaten</label>
@@ -141,12 +162,20 @@
                   <option v-for="d in departemenList" :key="d.id" :value="d.id">{{ d.nama }}</option>
                 </select>
               </div>
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <label class="form-label">Status</label>
                 <label class="form-check form-switch form-switch-3">
                   <input v-model="form.statusAktif" class="form-check-input" type="checkbox" />
                   <span class="form-check-label">{{ form.statusAktif ? 'Aktif' : 'Nonaktif' }}</span>
                 </label>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Jenis Kontrak</label>
+                <select v-model="form.jenis_kontrak" class="form-select">
+                  <option value="PKWT">PKWT (Kontrak)</option>
+                  <option value="PKWTT">PKWTT (Tetap)</option>
+                  <option value="Magang">Magang</option>
+                </select>
               </div>
             </div>
           </div>
@@ -176,6 +205,13 @@ const error = ref("")
 const previewFoto = ref("")
 const fotoFile = ref(null)
 
+const kecamatanInput = ref(null)
+const kecamatanSearch = ref("")
+const kecamatanSuggestions = ref([])
+const kecamatanDropdownOpen = ref(false)
+let kecamatanDebounce = null
+const selectedKecamatan = ref(null)
+
 const jabatanList = ref([])
 const departemenList = ref([])
 const wilayahList = ref([])
@@ -200,6 +236,7 @@ const form = reactive({
   id_jabatan: "",
   id_departemen: "",
   statusAktif: true,
+  jenis_kontrak: "PKWTT",
   pendidikan: [],
 })
 
@@ -231,12 +268,43 @@ async function handleFoto(e) {
   fotoFile.value = file
 }
 
-function onKecamatanChange() {
-  const w = wilayahMap.value[Number(form.id_kecamatan)]
-  if (w) {
-    form.kabupaten = w.kabupaten || ""
-    form.provinsi = w.provinsi || ""
+async function onKecamatanSearch() {
+  if (kecamatanDebounce) clearTimeout(kecamatanDebounce)
+  const val = kecamatanSearch.value.trim()
+  if (val.length < 3) {
+    kecamatanSuggestions.value = []
+    kecamatanDropdownOpen.value = false
+    return
   }
+  kecamatanDebounce = setTimeout(async () => {
+    try {
+      const res = await get(`/master/wilayah?search=${encodeURIComponent(val)}`)
+      kecamatanSuggestions.value = res.data || []
+      kecamatanDropdownOpen.value = kecamatanSuggestions.value.length > 0
+    } catch {
+      kecamatanSuggestions.value = []
+    }
+  }, 300)
+}
+
+function onKecamatanFocus() {
+  if (kecamatanSuggestions.value.length > 0) {
+    kecamatanDropdownOpen.value = true
+  }
+}
+
+function onKecamatanBlur() {
+  setTimeout(() => { kecamatanDropdownOpen.value = false }, 200)
+}
+
+function pilihKecamatan(w) {
+  selectedKecamatan.value = w
+  kecamatanSearch.value = w.kecamatan
+  form.id_kecamatan = w.id
+  form.kabupaten = w.kabupaten || ""
+  form.provinsi = w.provinsi || ""
+  kecamatanSuggestions.value = []
+  kecamatanDropdownOpen.value = false
 }
 
 async function handleSubmit() {
@@ -248,13 +316,23 @@ async function handleSubmit() {
     submitting.value = false
     return
   }
+  if (form.nama_pegawai && !/^[a-zA-Z0-9\' ]+$/.test(form.nama_pegawai)) {
+    error.value = "Nama hanya boleh huruf, angka, petik, dan spasi"
+    submitting.value = false
+    return
+  }
+  if (form.nomor_hp && !/^\+62[0-9]{6,15}$/.test(form.nomor_hp)) {
+    error.value = "Nomor HP harus format internasional (+62xxx)"
+    submitting.value = false
+    return
+  }
 
   try {
     let foto = null
     if (fotoFile.value) {
       const fd = new FormData()
       fd.append("file", fotoFile.value)
-      const fotoRes = await post<any>("/pegawai/upload-foto", fd)
+      const fotoRes = await post("/pegawai/upload-foto", fd)
       foto = fotoRes.data.filename
     }
 
@@ -262,6 +340,7 @@ async function handleSubmit() {
       ...form,
       foto_pegawai: foto,
       status: form.statusAktif ? "Aktif" : "Nonaktif",
+      jenis_kontrak: form.jenis_kontrak,
       id_kecamatan: form.id_kecamatan ? Number(form.id_kecamatan) : null,
       id_jabatan: form.id_jabatan ? Number(form.id_jabatan) : null,
       id_departemen: form.id_departemen ? Number(form.id_departemen) : null,
@@ -289,20 +368,20 @@ async function handleSubmit() {
 
 onMounted(async () => {
   try {
-    const [jabatan, departemen, wilayah] = await Promise.all([
-      get<any>("/master/jabatan"),
-      get<any>("/master/departemen"),
-      get<any>("/master/wilayah"),
+    const [jabatan, departemen] = await Promise.all([
+      get
+("/master/jabatan"),
+      get
+("/master/departemen"),
     ])
     jabatanList.value = jabatan.data
     departemenList.value = departemen.data
-    wilayahList.value = wilayah.data
-    wilayah.data.forEach((w) => { wilayahMap.value[w.id] = w })
   } catch {}
 
   if (props.id) {
     try {
-      const res = await get<any>(`/pegawai/${props.id}`)
+      const res = await get
+(`/pegawai/${props.id}`)
       const d = res.data
       Object.assign(form, {
         nip: d.nip || "",
@@ -323,9 +402,11 @@ onMounted(async () => {
         id_jabatan: d.id_jabatan || "",
         id_departemen: d.id_departemen || "",
         statusAktif: d.status === "Aktif",
+        jenis_kontrak: d.jenis_kontrak || "PKWTT",
         pendidikan: d.pendidikan || [],
       })
       if (d.foto_pegawai) previewFoto.value = `/images/pegawai/${d.foto_pegawai}`
+      if (d.kecamatan) kecamatanSearch.value = d.kecamatan
     } catch (err) {
       error.value = err.message
     }

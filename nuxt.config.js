@@ -1,5 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  ssr: false,
+
   future: {
     compatibilityVersion: 4,
   },
@@ -37,13 +39,7 @@ export default defineNuxtConfig({
       charset: "utf-8",
       viewport: "width=device-width, initial-scale=1",
       link: [{ rel: "icon", type: "image/x-icon", href: "/favicon.png" }],
-      script: [
-        {
-          src: "https://www.google.com/recaptcha/api.js",
-          async: true,
-          defer: true,
-        },
-      ],
+      script: [],
     },
   },
 

@@ -2,16 +2,31 @@ import { defineEventHandler, readBody, createError } from "h3";
 import bcrypt from "bcrypt";
 import pool from "../../utils/db";
 import { signToken } from "../../utils/jwt";
+import { logActivity } from "../../utils/activity";
+import process from "node:process";
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
-  const { username, password } = body;
+  const { username, password, recaptchaToken } = body;
 
   if (!username || !password) {
     throw createError({
       statusCode: 400,
       message: "Username dan password wajib diisi",
     });
+  }
+
+  if (recaptchaToken) {
+    const secretKey = process.env.RECAPTCHA_SECRET_KEY
+    const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${recaptchaToken}`
+    const captchaRes = await fetch(verifyUrl, { method: "POST" })
+    const captchaData = await captchaRes.json()
+    if (!captchaData.success) {
+      throw createError({
+        statusCode: 400,
+        message: "Verifikasi captcha gagal, silakan coba lagi",
+      })
+    }
   }
 
   const [rows]: any = await pool.query(
@@ -39,6 +54,13 @@ export default defineEventHandler(async (event) => {
     nama: user.nama || user.nama_pegawai,
   });
 
+  const [permRows] = await pool.query(
+    "SELECT modul_fitur, akses, `create`, `read`, `update`, `delete` FROM role_permission WHERE id_role = ?",
+    [user.id_role],
+  )
+
+  await logActivity(event, "Login Aplikasi", `User ${user.username} login ke sistem`, user.id)
+
   return {
     success: true,
     token,
@@ -46,6 +68,9 @@ export default defineEventHandler(async (event) => {
       id: user.id,
       nama: user.nama || user.nama_pegawai,
       username: user.username,
+      role: user.nama_role,
+      id_role: user.id_role,
     },
+    permissions: permRows,
   };
 });

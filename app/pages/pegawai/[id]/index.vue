@@ -155,8 +155,6 @@
 <script setup>
 definePageMeta({ title: "Detail Pegawai", middleware: "auth" })
 useSeoMeta({ title: "Detail Pegawai" })
-useSession()
-
 const { get } = useApi()
 const { goBack } = useGoBack()
 const route = useRoute()
@@ -180,7 +178,7 @@ function downloadPDF() {
 
 onMounted(async () => {
   try {
-    const res = await get<any>(`/pegawai/${route.params.id}`)
+    const res = await get(`/pegawai/${route.params.id}`)
     pegawai.value = res.data
   } catch (err) {
     console.error(err)

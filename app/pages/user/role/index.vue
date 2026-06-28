@@ -38,8 +38,6 @@
 <script setup>
 definePageMeta({ title: "Manajemen Role", middleware: "auth" })
 useSeoMeta({ title: "Manajemen Role" })
-useSession()
-
 import { IconSearch } from "@tabler/icons-vue"
 const { get } = useApi()
 
@@ -52,7 +50,7 @@ function formatDate(d) {
 
 onMounted(async () => {
   try {
-    const res = await get<any>("/role")
+    const res = await get("/role")
     data.value = res.data
   } catch {} finally { loading.value = false }
 })

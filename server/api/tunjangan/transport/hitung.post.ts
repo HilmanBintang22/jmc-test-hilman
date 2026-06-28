@@ -21,20 +21,25 @@ export default defineEventHandler(async (event) => {
   const maxKm = setting.max_km || 25
 
   const [pegawaiRows] = await pool.query(
-    `SELECT p.id, p.nama_pegawai, p.jarak_rumah_kantor,
-            TIMESTAMPDIFF(DAY, '${tahun}-${String(bulan).padStart(2, "0")}-01', LAST_DAY('${tahun}-${String(bulan).padStart(2, "0")}-01')) + 1 as days_in_month
+    `SELECT p.id, p.nama_pegawai, p.jarak_rumah_kantor
      FROM pegawai p
-     WHERE p.status = 'Aktif' AND p.jarak_rumah_kantor IS NOT NULL
+     WHERE p.status = 'Aktif'
+       AND p.jenis_kontrak = 'PKWTT'
+       AND p.jarak_rumah_kantor IS NOT NULL
        AND p.jarak_rumah_kantor >= ? AND p.jarak_rumah_kantor <= ?`,
     [minKm, maxKm],
   )
 
   const pegawai = pegawaiRows as any[]
   if (pegawai.length === 0) {
-    throw createError({ statusCode: 400, message: "Tidak ada pegawai yang memenuhi kriteria" })
+    throw createError({ statusCode: 400, message: "Tidak ada pegawai tetap yang memenuhi kriteria" })
   }
 
   const hariKerja = 22
+  if (hariKerja < 19) {
+    throw createError({ statusCode: 400, message: "Jumlah hari kerja tidak mencukupi (min 19 hari)" })
+  }
+
   const conn = await pool.getConnection()
 
   try {
@@ -65,11 +70,11 @@ export default defineEventHandler(async (event) => {
     await logActivity(
       event,
       "Hitung Tunjangan",
-      `Menghitung tunjangan transport bulan ${bulan}/${tahun} untuk ${inserted} pegawai`,
+      `Menghitung tunjangan transport bulan ${bulan}/${tahun} untuk ${inserted} pegawai tetap`,
       auth?.id,
     )
 
-    return { success: true, message: `Tunjangan berhasil dihitung untuk ${inserted} pegawai` }
+    return { success: true, message: `Tunjangan berhasil dihitung untuk ${inserted} pegawai tetap` }
   } catch (err) {
     await conn.rollback()
     throw createError({ statusCode: 500, message: "Gagal menghitung tunjangan" })

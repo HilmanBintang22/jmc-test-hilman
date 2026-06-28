@@ -1,8 +1,9 @@
 import { verifyToken } from "../utils/jwt"
 import { defineEventHandler, getHeader, createError } from "h3"
 import pool from "../utils/db"
+import { enforcePermission } from "../utils/permission"
 
-const publicRoutes = ["/api/auth/login", "/api/auth/logout", "/api/auth/verify"]
+const publicRoutes = ["/api/auth/login", "/api/auth/logout", "/api/auth/verify", "/api/health"]
 
 export default defineEventHandler(async (event) => {
   if (!event.path.startsWith("/api/")) return
@@ -14,25 +15,33 @@ export default defineEventHandler(async (event) => {
   }
 
   const token = authHeader.split(" ")[1]
+  let decoded: any
   try {
-    const decoded = verifyToken(token) as any
-
-    const [rows] = await pool.query(
-      `SELECT u.id, u.disabled, ur.nama_role
-       FROM user u
-       LEFT JOIN user_role ur ON u.id_role = ur.id
-       WHERE u.id = ?`,
-      [decoded.id],
-    )
-
-    const user = (rows as any[])[0]
-    if (!user || user.disabled) {
-      throw createError({ statusCode: 401, message: "Akun dinonaktifkan" })
-    }
-
-    event.context.auth = { ...decoded, nama_role: user.nama_role }
-  } catch (err: any) {
-    if (err.statusCode) throw err
+    decoded = verifyToken(token) as any
+  } catch {
     throw createError({ statusCode: 401, message: "Token invalid atau expired" })
   }
+
+  const [rows] = await pool.query(
+    `SELECT u.id, u.id_role, u.disabled, ur.nama_role
+     FROM user u
+     LEFT JOIN user_role ur ON u.id_role = ur.id
+     WHERE u.id = ?`,
+    [decoded.id],
+  )
+
+  const user = (rows as any[])[0]
+  if (!user || user.disabled) {
+    throw createError({ statusCode: 401, message: "Akun dinonaktifkan" })
+  }
+
+  event.context.auth = {
+    id: user.id,
+    id_role: user.id_role,
+    nama_role: user.nama_role,
+    username: decoded.username,
+    nama: decoded.nama,
+  }
+
+  await enforcePermission(event, user.id_role)
 })

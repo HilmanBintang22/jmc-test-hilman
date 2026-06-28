@@ -39,8 +39,6 @@
 <script setup>
 definePageMeta({ title: "Detail Tunjangan Transport", middleware: "auth" })
 useSeoMeta({ title: "Detail Tunjangan Transport" })
-useSession()
-
 import { formatRupiah } from "~/utils/formatRupiah.js"
 const { get, post } = useApi()
 const route = useRoute()
@@ -50,7 +48,7 @@ const hitungLoading = ref(false)
 
 async function fetchDetail() {
   try {
-    const res = await get<any>(`/tunjangan/transport/${route.params.id}`)
+    const res = await get(`/tunjangan/transport/${route.params.id}`)
     detailData.value = res.data
   } catch {
     detailData.value = null

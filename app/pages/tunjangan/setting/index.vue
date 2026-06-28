@@ -39,8 +39,6 @@
 <script setup>
 definePageMeta({ title: "Setting Tunjangan Transport", middleware: "auth" })
 useSeoMeta({ title: "Setting Tunjangan Transport" })
-useSession()
-
 const { get, put } = useApi()
 const { goBack } = useGoBack()
 
@@ -70,7 +68,7 @@ async function simpanSetting() {
 
 onMounted(async () => {
   try {
-    const res = await get<any>("/tunjangan/setting")
+    const res = await get("/tunjangan/setting")
     if (res.data) {
       Object.assign(form, {
         base_fare: res.data.base_fare,

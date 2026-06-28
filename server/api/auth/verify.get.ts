@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
     const decoded: any = verifyToken(token)
 
     const [rows] = await pool.query(
-      `SELECT u.id, u.username, u.nama, u.disabled, ur.nama_role
+      `SELECT u.id, u.id_role, u.username, u.nama, u.disabled, ur.nama_role
        FROM user u
        LEFT JOIN user_role ur ON u.id_role = ur.id
        WHERE u.id = ?`,
@@ -25,6 +25,11 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 401, message: "Akun dinonaktifkan" })
     }
 
+    const [permRows] = await pool.query(
+      "SELECT modul_fitur, akses, `create`, `read`, `update`, `delete` FROM role_permission WHERE id_role = ?",
+      [user.id_role],
+    )
+
     return {
       success: true,
       data: {
@@ -32,7 +37,9 @@ export default defineEventHandler(async (event) => {
         username: user.username,
         nama: user.nama,
         role: user.nama_role,
+        id_role: user.id_role,
       },
+      permissions: permRows,
     }
   } catch (err: any) {
     if (err.statusCode) throw err

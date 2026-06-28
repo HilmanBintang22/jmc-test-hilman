@@ -15,8 +15,11 @@ export default defineEventHandler(async (event) => {
     params.push(s, s, s)
   }
   if (query.jabatan) {
-    where += " AND p.id_jabatan = ?"
-    params.push(Number(query.jabatan))
+    const jabatanIds = String(query.jabatan).split(",").map(Number).filter(Boolean)
+    if (jabatanIds.length > 0) {
+      where += " AND p.id_jabatan IN (" + jabatanIds.map(() => "?").join(",") + ")"
+      params.push(...jabatanIds)
+    }
   }
   if (query.departemen) {
     where += " AND p.id_departemen = ?"
@@ -25,6 +28,10 @@ export default defineEventHandler(async (event) => {
   if (query.status) {
     where += " AND p.status = ?"
     params.push(query.status)
+  }
+  if (query.jenis_kontrak) {
+    where += " AND p.jenis_kontrak = ?"
+    params.push(query.jenis_kontrak)
   }
   if (query.masa_kerja_min) {
     where += " AND TIMESTAMPDIFF(YEAR, p.tanggal_masuk, CURDATE()) >= ?"
@@ -42,7 +49,7 @@ export default defineEventHandler(async (event) => {
   const dataSql = `
     SELECT p.id, p.nip, p.nama_pegawai as nama, p.email, p.nomor_hp, p.foto_pegawai as foto,
            mj.nama as jabatan, md.nama as departemen,
-           p.tanggal_masuk, p.status, p.tempat_lahir, p.tanggal_lahir, p.usia,
+           p.tanggal_masuk, p.status, p.jenis_kontrak, p.tempat_lahir, p.tanggal_lahir, p.usia,
            p.status_kawin, p.jumlah_anak, p.alamat_lengkap, p.jarak_rumah_kantor,
            TIMESTAMPDIFF(YEAR, p.tanggal_masuk, CURDATE()) as masa_kerja_tahun,
            TIMESTAMPDIFF(MONTH, p.tanggal_masuk, CURDATE()) % 12 as masa_kerja_bulan

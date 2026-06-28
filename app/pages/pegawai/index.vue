@@ -6,7 +6,7 @@ definePageMeta({
 })
 
 useSeoMeta({ title: "Data Pegawai" })
-useSession()
+
 
 import {
   IconPencil, IconPlus, IconSearch, IconTrash, IconFileDescription, IconCloudDownload,
@@ -20,10 +20,13 @@ const pagination = ref(null)
 const search = ref("")
 const filterJabatan = ref("")
 const filterStatus = ref("")
+const filterJenisKontrak = ref("")
 const masaKerjaMin = ref("")
 const masaKerjaMax = ref("")
 const page = ref(1)
 const selected = ref([])
+
+const jabatanMulti = ref([])
 
 async function fetchData() {
   loading.value = true
@@ -32,12 +35,13 @@ async function fetchData() {
     params.set("page", String(page.value))
     params.set("limit", "10")
     if (search.value) params.set("search", search.value)
-    if (filterJabatan.value) params.set("jabatan", filterJabatan.value)
+    if (jabatanMulti.value.length > 0) params.set("jabatan", jabatanMulti.value.join(","))
     if (filterStatus.value) params.set("status", filterStatus.value)
+    if (filterJenisKontrak.value) params.set("jenis_kontrak", filterJenisKontrak.value)
     if (masaKerjaMin.value) params.set("masa_kerja_min", masaKerjaMin.value)
     if (masaKerjaMax.value) params.set("masa_kerja_max", masaKerjaMax.value)
 
-    const res = await get<any>(`/pegawai?${params.toString()}`)
+    const res = await get(`/pegawai?${params.toString()}`)
     data.value = res.data
     pagination.value = res.pagination
   } catch (err) {
@@ -50,13 +54,13 @@ async function fetchData() {
 const jabatanList = ref([])
 onMounted(async () => {
   try {
-    const res = await get<any>("/master/jabatan")
+    const res = await get("/master/jabatan")
     jabatanList.value = res.data
   } catch {}
   await fetchData()
 })
 
-watch([search, filterJabatan, filterStatus, masaKerjaMin, masaKerjaMax, page], fetchData)
+watch([search, jabatanMulti, filterStatus, filterJenisKontrak, masaKerjaMin, masaKerjaMax, page], fetchData)
 
 function formatDate(dateStr) {
   if (!dateStr) return "-"
@@ -124,9 +128,17 @@ const formatMasaKerja = (row) => {
             <span>-</span>
             <input type="number" v-model="masaKerjaMax" class="form-control" style="width: 60px" placeholder="Max" />
           </div>
-          <select v-model="filterJabatan" class="form-select" style="width: 160px">
-            <option value="">Semua Jabatan</option>
-            <option v-for="j in jabatanList" :key="j.id" :value="j.id">{{ j.nama }}</option>
+          <div style="width: 180px">
+            <select v-model="jabatanMulti" class="form-select" multiple size="1" style="height: 38px">
+              <option value="" disabled>Pilih Jabatan</option>
+              <option v-for="j in jabatanList" :key="j.id" :value="String(j.id)">{{ j.nama }}</option>
+            </select>
+          </div>
+          <select v-model="filterJenisKontrak" class="form-select" style="width: 140px">
+            <option value="">Semua Kontrak</option>
+            <option value="PKWT">PKWT (Kontrak)</option>
+            <option value="PKWTT">PKWTT (Tetap)</option>
+            <option value="Magang">Magang</option>
           </select>
           <select v-model="filterStatus" class="form-select" style="width: 140px">
             <option value="">Semua Status</option>

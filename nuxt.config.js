@@ -8,33 +8,35 @@ export default defineNuxtConfig({
 
   compatibilityDate: "2024-11-01",
 
-  devtools: { enabled: true },
+  devtools: {
+    enabled: true,
+  },
 
   runtimeConfig: {
-  public: {
-    appName: process.env.APP_NAME,
-    appClient: process.env.APP_CLIENT,
-    recaptchaSiteKey: process.env.NUXT_PUBLIC_RECAPTCHA_SITE_KEY,
+    public: {
+      appName: process.env.APP_NAME,
+      appClient: process.env.APP_CLIENT,
+      recaptchaSiteKey: process.env.NUXT_PUBLIC_RECAPTCHA_SITE_KEY,
 
-    supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL,
-    supabaseKey: process.env.NUXT_PUBLIC_SUPABASE_KEY,
+      supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL,
+      supabaseKey: process.env.NUXT_PUBLIC_SUPABASE_KEY,
+    },
+
+    jwtSecret: process.env.JWT_SECRET,
+    jwtExpiresIn: process.env.JWT_EXPIRES_IN || "3m",
   },
-
-  jwtSecret: process.env.JWT_SECRET,
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN || "3m",
-},
 
   nitro: {
-  preset: "node-server",
+    preset: "node-server",
 
-  experimental: {
-    openAPI: true,
-  },
+    experimental: {
+      openAPI: true,
+    },
 
-  externals: {
-    external: ["xlsx"],
+    externals: {
+      external: ["xlsx"],
+    },
   },
-}
 
   css: [
     "@tabler/core/dist/css/tabler.min.css",
@@ -45,7 +47,13 @@ export default defineNuxtConfig({
     head: {
       charset: "utf-8",
       viewport: "width=device-width, initial-scale=1",
-      link: [{ rel: "icon", type: "image/x-icon", href: "/favicon.png" }],
+      link: [
+        {
+          rel: "icon",
+          type: "image/x-icon",
+          href: "/favicon.png",
+        },
+      ],
       script: [],
     },
   },

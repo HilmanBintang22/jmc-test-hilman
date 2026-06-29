@@ -27,16 +27,11 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    preset: "node-server",
-
-    experimental: {
-      openAPI: true,
-    },
-
-    externals: {
-      external: ["xlsx"],
-    },
+  preset: "node-server",
+  output: {
+    dir: ".output",
   },
+},
 
   css: [
     "@tabler/core/dist/css/tabler.min.css",

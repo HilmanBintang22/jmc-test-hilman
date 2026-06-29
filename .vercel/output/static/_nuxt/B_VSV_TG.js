@@ -1,0 +1,1 @@
+import{P as o}from"./P-q4_SdU.js";import{a as r}from"./D7nf1NYI.js";import{a4 as a,e as i,$ as s,L as m}from"./lsutam4Q.js";import"./ClBRFkR-.js";import"./Csxl3Ycu.js";import"./C1dAFpaR.js";import"./DlAUqK2U.js";const P={__name:"index",setup(p){r({title:"Edit Pegawai"});const t=a(),e=String(t.params.id);return(n,c)=>(m(),i(o,{id:s(e)},null,8,["id"]))}};export{P as default};

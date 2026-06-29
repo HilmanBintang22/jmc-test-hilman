@@ -25,7 +25,7 @@ export default defineNuxtConfig({
 },
 
   nitro: {
-  preset: "vercel",
+  preset: "node-server",
 
   experimental: {
     openAPI: true,
@@ -34,7 +34,7 @@ export default defineNuxtConfig({
   externals: {
     external: ["xlsx"],
   },
-},
+}
 
   css: [
     "@tabler/core/dist/css/tabler.min.css",

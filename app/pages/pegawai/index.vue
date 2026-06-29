@@ -399,7 +399,14 @@ const formatMasaKerja = (row) => {
                 <div class="d-flex align-items-center gap-1">
                   <img
                     v-if="item.foto"
-                    :src="`/images/pegawai/${item.foto}`"
+                    :src="item.foto"
+                    alt=""
+                    style="width: 28px; height: 28px"
+                    class="rounded-pill"
+                  />
+                  <img
+                    v-else
+                    src="/favicon.png"
                     alt=""
                     style="width: 28px; height: 28px"
                     class="rounded-pill"

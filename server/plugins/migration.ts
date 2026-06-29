@@ -4,12 +4,13 @@ import process from "node:process"
 export default defineNitroPlugin(async () => {
   try {
     const conn = await mysql.createConnection({
-      host: process.env.DB_HOST || "localhost",
-      port: Number(process.env.DB_PORT) || 3306,
-      user: process.env.DB_USER || "root",
-      password: process.env.DB_PASS || "",
-      database: process.env.DB_NAME || "kepegawaian_db",
-    })
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT),
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
+  ssl: process.env.DB_SSL === "true" ? {} : undefined,
+})
 
     const [rows] = await conn.query(
       "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'pegawai' AND COLUMN_NAME = 'jenis_kontrak'",

@@ -11,23 +11,30 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
 
   runtimeConfig: {
-    public: {
-      appName: process.env.APP_NAME,
-      appClient: process.env.APP_CLIENT,
-      recaptchaSiteKey: process.env.NUXT_PUBLIC_RECAPTCHA_SITE_KEY,
-    },
-    jwtSecret: process.env.JWT_SECRET,
-    jwtExpiresIn: process.env.JWT_EXPIRES_IN || "3m",
+  public: {
+    appName: process.env.APP_NAME,
+    appClient: process.env.APP_CLIENT,
+    recaptchaSiteKey: process.env.NUXT_PUBLIC_RECAPTCHA_SITE_KEY,
+
+    supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL,
+    supabaseKey: process.env.NUXT_PUBLIC_SUPABASE_KEY,
   },
 
+  jwtSecret: process.env.JWT_SECRET,
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN || "3m",
+},
+
   nitro: {
-    experimental: {
-      openAPI: true,
-    },
-    externals: {
-      external: ["xlsx"]
-    }
+  preset: "vercel",
+
+  experimental: {
+    openAPI: true,
   },
+
+  externals: {
+    external: ["xlsx"],
+  },
+},
 
   css: [
     "@tabler/core/dist/css/tabler.min.css",

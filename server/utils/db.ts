@@ -1,4 +1,4 @@
-import mysql from "mysql2/promise"; // Pastikan ada /promise
+import mysql from "mysql2/promise";
 
 export const db = mysql.createPool({
   host: process.env.DB_HOST,
@@ -6,10 +6,12 @@ export const db = mysql.createPool({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  ssl: {}, 
+  // UBAH BAGIAN INI:
+  ssl: {
+    rejectUnauthorized: false
+  }, 
   waitForConnections: true,
   connectionLimit: 10,
 });
 
-// Tambahan baris ini agar file API lainnya bisa mengimpor sebagai default export
 export default db;

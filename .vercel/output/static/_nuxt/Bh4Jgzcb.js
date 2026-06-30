@@ -1,1 +1,0 @@
-import{P as a}from"./P-q4_SdU.js";import{a as e}from"./D7nf1NYI.js";import{e as o,L as r}from"./lsutam4Q.js";import"./ClBRFkR-.js";import"./Csxl3Ycu.js";import"./C1dAFpaR.js";import"./DlAUqK2U.js";const l={__name:"index",setup(t){return e({title:"Tambah Pegawai"}),(m,i)=>(r(),o(a))}};export{l as default};

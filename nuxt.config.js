@@ -30,9 +30,12 @@ export default defineNuxtConfig({
     output: {
       dir: ".output",
     },
-    imports: {
-      autoImport: true,
-    },
+    // TRICK FINAL: Memaksa Vercel Serverless mengikutsertakan paket mysql2 di environment produksinya
+    vercel: {
+      config: {
+        includeFiles: ["node_modules/mysql2/**"]
+      }
+    }
   },
 
   css: [
@@ -67,7 +70,6 @@ export default defineNuxtConfig({
     optimizeDeps: {
       include: ["apexcharts"],
     },
-    // Memaksa Vite SSR untuk memasukkan mysql2 ke dalam bundle build serverless
     ssr: {
       noExternal: ["mysql2"],
     },

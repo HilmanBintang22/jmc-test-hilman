@@ -26,12 +26,15 @@ export default defineNuxtConfig({
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || "3m",
   },
 
+  // BAGIAN NITRO YANG SUDAH DIPERBAIKI
   nitro: {
-  preset: "node-server",
-  output: {
-    dir: ".output",
+    output: {
+      dir: ".output",
+    },
+    externals: {
+      inline: ["mysql2"],
+    },
   },
-},
 
   css: [
     "@tabler/core/dist/css/tabler.min.css",

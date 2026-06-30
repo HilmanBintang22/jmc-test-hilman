@@ -13,6 +13,13 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    // Tambahkan kredensial database di sini agar aman dan terbaca di server Nitro
+    dbHost: process.env.DB_HOST,
+    dbPort: process.env.DB_PORT,
+    dbUser: process.env.DB_USER,
+    dbPassword: process.env.DB_PASSWORD,
+    dbName: process.env.DB_NAME,
+
     public: {
       appName: process.env.APP_NAME,
       appClient: process.env.APP_CLIENT,
@@ -27,7 +34,7 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    preset: "node-server", // <--- WAJIB pakai ini lagi untuk Railway
+    preset: "node-server", // WAJIB pakai ini lagi untuk Railway
     output: {
       dir: ".output",
     },
@@ -37,7 +44,9 @@ export default defineNuxtConfig({
     optimizeDeps: {
       include: ["apexcharts"],
     },
-    // Bagian ssr: { noExternal: [...] } yang kemarin bisa DIHAPUS karena tidak dibutuhkan lagi
+    ssr: {
+      noExternal: ["mysql2"],
+    },
   },
 
   css: [
@@ -67,13 +76,4 @@ export default defineNuxtConfig({
     "~/plugins/tabler.client.js",
     "~/plugins/apexcharts.client.js",
   ],
-
-  vite: {
-    optimizeDeps: {
-      include: ["apexcharts"],
-    },
-    ssr: {
-      noExternal: ["mysql2"],
-    },
-  },
 });

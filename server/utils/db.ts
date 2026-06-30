@@ -10,3 +10,6 @@ export const db = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
 });
+
+// Tambahan baris ini agar file API lainnya bisa mengimpor sebagai default export
+export default db;

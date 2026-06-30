@@ -30,10 +30,29 @@ export default defineNuxtConfig({
     output: {
       dir: ".output",
     },
-    // Ganti bagian externals sebelumnya dengan ini
-    experimental: {
-      nodeModules: true
-    }
+    imports: {
+      autoImport: true,
+    },
+  },
+
+  css: [
+    "@tabler/core/dist/css/tabler.min.css",
+    "~/assets/css/backend.css",
+  ],
+
+  app: {
+    head: {
+      charset: "utf-8",
+      viewport: "width=device-width, initial-scale=1",
+      link: [
+        {
+          rel: "icon",
+          type: "image/x-icon",
+          href: "/favicon.png",
+        },
+      ],
+      script: [],
+    },
   },
 
   modules: [],
@@ -47,6 +66,10 @@ export default defineNuxtConfig({
   vite: {
     optimizeDeps: {
       include: ["apexcharts"],
+    },
+    // Memaksa Vite SSR untuk memasukkan mysql2 ke dalam bundle build serverless
+    ssr: {
+      noExternal: ["mysql2"],
     },
   },
 });

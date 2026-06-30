@@ -26,34 +26,14 @@ export default defineNuxtConfig({
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || "3m",
   },
 
-  // BAGIAN NITRO YANG SUDAH DIPERBAIKI
   nitro: {
     output: {
       dir: ".output",
     },
-    externals: {
-      inline: ["mysql2"],
-    },
-  },
-
-  css: [
-    "@tabler/core/dist/css/tabler.min.css",
-    "~/assets/css/backend.css",
-  ],
-
-  app: {
-    head: {
-      charset: "utf-8",
-      viewport: "width=device-width, initial-scale=1",
-      link: [
-        {
-          rel: "icon",
-          type: "image/x-icon",
-          href: "/favicon.png",
-        },
-      ],
-      script: [],
-    },
+    // Ganti bagian externals sebelumnya dengan ini
+    experimental: {
+      nodeModules: true
+    }
   },
 
   modules: [],

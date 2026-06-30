@@ -27,9 +27,17 @@ export default defineNuxtConfig({
   },
 
   nitro: {
+    preset: "node-server", // <--- WAJIB pakai ini lagi untuk Railway
     output: {
       dir: ".output",
     },
+  },
+
+  vite: {
+    optimizeDeps: {
+      include: ["apexcharts"],
+    },
+    // Bagian ssr: { noExternal: [...] } yang kemarin bisa DIHAPUS karena tidak dibutuhkan lagi
   },
 
   css: [

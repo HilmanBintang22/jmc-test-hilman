@@ -30,12 +30,6 @@ export default defineNuxtConfig({
     output: {
       dir: ".output",
     },
-    // TRICK FINAL: Memaksa Vercel Serverless mengikutsertakan paket mysql2 di environment produksinya
-    vercel: {
-      config: {
-        includeFiles: ["node_modules/mysql2/**"]
-      }
-    }
   },
 
   css: [

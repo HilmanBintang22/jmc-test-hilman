@@ -1,4 +1,10 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": ".output"
+  "functions": {
+    "server/api/**/*.ts": {
+      "includeFiles": "node_modules/mysql2/**"
+    },
+    "server/**/*.ts": {
+      "includeFiles": "node_modules/mysql2/**"
+    }
+  }
 }
